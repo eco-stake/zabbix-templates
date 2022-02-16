@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>5.0</version>
+    <date>2022-02-16T21:02:12Z</date>
+    <groups>
+        <group>
+            <name>Tendermint Nodes</name>
+        </group>
+    </groups>
+    <templates>
+        <template>
+            <template>Tendermint Node</template>
+            <name>Tendermint Node</name>
+            <groups>
+                <group>
+                    <name>Tendermint Nodes</name>
+                </group>
+            </groups>
+            <applications>
+                <application>
+                    <name>Tendermint Net Info</name>
+                </application>
+                <application>
+                    <name>Tendermint Node Info</name>
+                </application>
+                <application>
+                    <name>Tendermint Sync Info</name>
+                </application>
+            </applications>
+            <items>
+                <item>
+                    <name>Catching Up</name>
+                    <type>DEPENDENT</type>
+                    <key>catching-up</key>
+                    <delay>0</delay>
+                    <trends>0</trends>
+                    <value_type>TEXT</value_type>
+                    <applications>
+                        <application>
+                            <name>Tendermint Sync Info</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <params>$.body.result.sync_info.catching_up</params>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>rpc-status</key>
+                    </master_item>
+                </item>
+                <item>
+                    <name>Latest Block Delay</name>
+                    <type>DEPENDENT</type>
+                    <key>latest-block-delay</key>
+                    <delay>0</delay>
+                    <units>s</units>
+                    <applications>
+                        <application>
+                            <name>Tendermint Sync Info</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>JAVASCRIPT</type>
+                            <params>return parseInt((new Date() / 1000) - value)</params>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>latest-block-timestamp</key>
+                    </master_item>
+                    <triggers>
+                        <trigger>
+                            <expression>{avg(1m)}&gt;{$ALLOWED_DELAY}</expression>
+                            <name>Block Delay</name>
+                            <opdata>Delay: {ITEM.LASTVALUE}</opdata>
+                            <priority>INFO</priority>
+                            <dependencies>
+                                <dependency>
+                                    <name>Block Delay Warning</name>
+                                    <expression>{Tendermint Node:latest-block-delay.avg(1m)}&gt;{$ALLOWED_DELAY_WARN}</expression>
+                                </dependency>
+                                <dependency>
+                                    <name>RPC Failure</name>
+                                    <expression>{Tendermint Node:web.test.fail[Check RPC Health].last()}=1</expression>
+                                </dependency>
+                            </dependencies>
+                        </trigger>
+                        <trigger>
+                            <expression>{avg(1m)}&gt;{$ALLOWED_DELAY_WARN}</expression>
+                            <name>Block Delay Warning</name>
+                            <opdata>Delay: {ITEM.LASTVALUE}</opdata>
+                            <priority>WARNING</priority>
+                            <dependencies>
+                                <dependency>
+                                    <name>RPC Failure</name>
+                                    <expression>{Tendermint Node:web.test.fail[Check RPC Health].last()}=1</expression>
+                                </dependency>
+                            </dependencies>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Latest Block Height</name>
+                    <type>DEPENDENT</type>
+                    <key>latest-block-height</key>
+                    <delay>0</delay>
+                    <applications>
+                        <application>
+                            <name>Tendermint Sync Info</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <params>$.body.result.sync_info.latest_block_height</params>
+                        </step>
+                        <step>
+                            <type>JAVASCRIPT</type>
+                            <params>return parseInt(value)</params>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>rpc-status</key>
+                    </master_item>
+                </item>
+                <item>
+                    <name>Latest Block Timestamp</name>
+                    <type>DEPENDENT</type>
+                    <key>latest-block-timestamp</key>
+                    <delay>0</delay>
+                    <units>unixtime</units>
+                    <applications>
+                        <application>
+                            <name>Tendermint Sync Info</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <params>$.body.result.sync_info.latest_block_time</params>
+                        </step>
+                        <step>
+                            <type>JAVASCRIPT</type>
+                            <params>return parseInt(Date.parse(value) / 1000)</params>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>rpc-status</key>
+                    </master_item>
+                </item>
+                <item>
+                    <name>Node ID</name>
+                    <type>DEPENDENT</type>
+                    <key>node-id</key>
+                    <delay>0</delay>
+                    <trends>0</trends>
+                    <value_type>TEXT</value_type>
+                    <applications>
+                        <application>
+                            <name>Tendermint Node Info</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <params>$.body.result.node_info.id</params>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>rpc-status</key>
+                    </master_item>
+                </item>
+                <item>
+                    <name>Number of Peers</name>
+                    <type>DEPENDENT</type>
+                    <key>number-of-peers</key>
+                    <delay>0</delay>
+                    <units>peers</units>
+                    <applications>
+                        <application>
+                            <name>Tendermint Net Info</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <params>$.body.result.n_peers</params>
+                        </step>
+                        <step>
+                            <type>JAVASCRIPT</type>
+                            <params>return parseInt(value);</params>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>rpc-net-info</key>
+                    </master_item>
+                </item>
+                <item>
+                    <name>RPC Net Info</name>
+                    <type>HTTP_AGENT</type>
+                    <key>rpc-net-info</key>
+                    <delay>10s</delay>
+                    <history>0</history>
+                    <trends>0</trends>
+                    <value_type>TEXT</value_type>
+                    <applications>
+                        <application>
+                            <name>Tendermint Net Info</name>
+                        </application>
+                    </applications>
+                    <timeout>5s</timeout>
+                    <url>{$RPC_URL}/net_info</url>
+                    <output_format>JSON</output_format>
+                </item>
+                <item>
+                    <name>RPC Status</name>
+                    <type>HTTP_AGENT</type>
+                    <key>rpc-status</key>
+                    <delay>5s</delay>
+                    <history>0</history>
+                    <trends>0</trends>
+                    <value_type>TEXT</value_type>
+                    <applications>
+                        <application>
+                            <name>Tendermint Node Info</name>
+                        </application>
+                    </applications>
+                    <timeout>5s</timeout>
+                    <url>{$RPC_URL}/status</url>
+                    <output_format>JSON</output_format>
+                </item>
+            </items>
+            <httptests>
+                <httptest>
+                    <name>Check RPC Health</name>
+                    <application>
+                        <name>Tendermint Node Info</name>
+                    </application>
+                    <delay>10s</delay>
+                    <attempts>2</attempts>
+                    <steps>
+                        <step>
+                            <name>Get health</name>
+                            <url>{$RPC_URL}/health</url>
+                            <follow_redirects>NO</follow_redirects>
+                            <status_codes>200</status_codes>
+                        </step>
+                    </steps>
+                </httptest>
+            </httptests>
+            <macros>
+                <macro>
+                    <macro>{$ALLOWED_DELAY}</macro>
+                    <value>25</value>
+                </macro>
+                <macro>
+                    <macro>{$ALLOWED_DELAY_WARN}</macro>
+                    <value>120</value>
+                </macro>
+                <macro>
+                    <macro>{$NETWORK}</macro>
+                </macro>
+                <macro>
+                    <macro>{$RPC_URL}</macro>
+                </macro>
+                <macro>
+                    <macro>{$TOKEN}</macro>
+                </macro>
+            </macros>
+        </template>
+    </templates>
+    <triggers>
+        <trigger>
+            <expression>{Tendermint Node:web.test.fail[Check RPC Health].last()}=1</expression>
+            <name>RPC Failure</name>
+            <opdata>Failed Steps: {ITEM.VALUE}</opdata>
+            <priority>HIGH</priority>
+        </trigger>
+    </triggers>
+    <graphs>
+        <graph>
+            <name>Latest Block Delay</name>
+            <graph_items>
+                <graph_item>
+                    <sortorder>1</sortorder>
+                    <color>1A7C11</color>
+                    <item>
+                        <host>Tendermint Node</host>
+                        <key>latest-block-delay</key>
+                    </item>
+                </graph_item>
+            </graph_items>
+        </graph>
+        <graph>
+            <name>Number of Peers</name>
+            <graph_items>
+                <graph_item>
+                    <sortorder>1</sortorder>
+                    <color>1A7C11</color>
+                    <item>
+                        <host>Tendermint Node</host>
+                        <key>number-of-peers</key>
+                    </item>
+                </graph_item>
+            </graph_items>
+        </graph>
+    </graphs>
+</zabbix_export>
