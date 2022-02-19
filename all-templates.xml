@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>5.0</version>
-    <date>2022-02-16T21:04:35Z</date>
+    <date>2022-02-19T19:50:30Z</date>
     <groups>
         <group>
             <name>Tendermint Nodes</name>
@@ -13,7 +13,7 @@
             <name>Mintscan Validator</name>
             <templates>
                 <template>
-                    <name>Tendermint Validator</name>
+                    <name>Tendermint Node</name>
                 </template>
             </templates>
             <groups>
@@ -190,9 +190,15 @@ return JSON.stringify({
                 <macro>
                     <macro>{$BLOCK_MISSED_WARN}</macro>
                     <value>10</value>
+                    <description>Number of blocks before sending a HIGH notification. A notification is already sent after 1 block missed.</description>
+                </macro>
+                <macro>
+                    <macro>{$NETWORK}</macro>
+                    <description>Network this node belongs to. Match minstscan naming convention, e.g. crypto-org</description>
                 </macro>
                 <macro>
                     <macro>{$VALIDATOR_ADDRESS}</macro>
+                    <description>Validator's valoper address</description>
                 </macro>
             </macros>
         </template>
@@ -213,6 +219,9 @@ return JSON.stringify({
                 </application>
                 <application>
                     <name>Tendermint Sync Info</name>
+                </application>
+                <application>
+                    <name>Tendermint Validator Info</name>
                 </application>
             </applications>
             <items>
@@ -236,6 +245,59 @@ return JSON.stringify({
                     </preprocessing>
                     <master_item>
                         <key>rpc-status</key>
+                    </master_item>
+                </item>
+                <item>
+                    <name>Delegations</name>
+                    <type>DEPENDENT</type>
+                    <key>delegations</key>
+                    <delay>0</delay>
+                    <applications>
+                        <application>
+                            <name>Tendermint Validator Info</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <params>$.body.result.validator_info.voting_power</params>
+                        </step>
+                        <step>
+                            <type>JAVASCRIPT</type>
+                            <params>return Math.round(parseInt(value) / parseInt({$DENOM_FACTOR}))</params>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>rpc-status</key>
+                    </master_item>
+                    <triggers>
+                        <trigger>
+                            <expression>{last()}&lt;{prev()}</expression>
+                            <name>Delegation decrease</name>
+                            <opdata>Delegations: {ITEM.VALUE}</opdata>
+                            <priority>INFO</priority>
+                            <type>MULTIPLE</type>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Delegations last change</name>
+                    <type>DEPENDENT</type>
+                    <key>delegations-change</key>
+                    <delay>0</delay>
+                    <applications>
+                        <application>
+                            <name>Tendermint Validator Info</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>SIMPLE_CHANGE</type>
+                            <params/>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>delegations</key>
                     </master_item>
                 </item>
                 <item>
@@ -442,51 +504,28 @@ return JSON.stringify({
                 <macro>
                     <macro>{$ALLOWED_DELAY}</macro>
                     <value>25</value>
+                    <description>Block delay allowed before initial alert</description>
                 </macro>
                 <macro>
                     <macro>{$ALLOWED_DELAY_WARN}</macro>
                     <value>120</value>
+                    <description>Block delay allowed before warning alert</description>
                 </macro>
-                <macro>
-                    <macro>{$NETWORK}</macro>
-                </macro>
-                <macro>
-                    <macro>{$RPC_URL}</macro>
-                </macro>
-                <macro>
-                    <macro>{$TOKEN}</macro>
-                </macro>
-            </macros>
-        </template>
-        <template>
-            <template>Tendermint Validator</template>
-            <name>Tendermint Validator</name>
-            <templates>
-                <template>
-                    <name>Tendermint Node</name>
-                </template>
-            </templates>
-            <groups>
-                <group>
-                    <name>Tendermint Nodes</name>
-                </group>
-            </groups>
-            <applications>
-                <application>
-                    <name>Tendermint Validator Info</name>
-                </application>
-            </applications>
-            <macros>
                 <macro>
                     <macro>{$DENOM_FACTOR}</macro>
                     <value>1</value>
+                    <description>Adjust the reported voting power for networks like Nomic</description>
+                </macro>
+                <macro>
+                    <macro>{$RPC_URL}</macro>
+                    <description>RPC node to connect to; http://myip:26657</description>
                 </macro>
             </macros>
         </template>
     </templates>
     <triggers>
         <trigger>
-            <expression>{Tendermint Validator:delegations.last()}&gt;{Tendermint Validator:delegations.prev()} and {Tendermint Validator:delegations-change.last()}&gt;0</expression>
+            <expression>{Tendermint Node:delegations.last()}&gt;{Tendermint Node:delegations.prev()} and {Tendermint Node:delegations-change.last()}&gt;0</expression>
             <name>Delegation increase</name>
             <opdata>Delegations: {ITEM.VALUE1} (+{ITEM.VALUE3})</opdata>
             <priority>INFO</priority>
@@ -507,7 +546,7 @@ return JSON.stringify({
                     <sortorder>1</sortorder>
                     <color>1A7C11</color>
                     <item>
-                        <host>Tendermint Validator</host>
+                        <host>Tendermint Node</host>
                         <key>delegations-change</key>
                     </item>
                 </graph_item>
@@ -520,7 +559,7 @@ return JSON.stringify({
                     <sortorder>1</sortorder>
                     <color>1A7C11</color>
                     <item>
-                        <host>Tendermint Validator</host>
+                        <host>Tendermint Node</host>
                         <key>delegations</key>
                     </item>
                 </graph_item>

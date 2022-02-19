@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>5.0</version>
-    <date>2022-02-16T21:02:12Z</date>
+    <date>2022-02-19T19:49:56Z</date>
     <groups>
         <group>
             <name>Tendermint Nodes</name>
@@ -26,6 +26,9 @@
                 <application>
                     <name>Tendermint Sync Info</name>
                 </application>
+                <application>
+                    <name>Tendermint Validator Info</name>
+                </application>
             </applications>
             <items>
                 <item>
@@ -48,6 +51,59 @@
                     </preprocessing>
                     <master_item>
                         <key>rpc-status</key>
+                    </master_item>
+                </item>
+                <item>
+                    <name>Delegations</name>
+                    <type>DEPENDENT</type>
+                    <key>delegations</key>
+                    <delay>0</delay>
+                    <applications>
+                        <application>
+                            <name>Tendermint Validator Info</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <params>$.body.result.validator_info.voting_power</params>
+                        </step>
+                        <step>
+                            <type>JAVASCRIPT</type>
+                            <params>return Math.round(parseInt(value) / parseInt({$DENOM_FACTOR}))</params>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>rpc-status</key>
+                    </master_item>
+                    <triggers>
+                        <trigger>
+                            <expression>{last()}&lt;{prev()}</expression>
+                            <name>Delegation decrease</name>
+                            <opdata>Delegations: {ITEM.VALUE}</opdata>
+                            <priority>INFO</priority>
+                            <type>MULTIPLE</type>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Delegations last change</name>
+                    <type>DEPENDENT</type>
+                    <key>delegations-change</key>
+                    <delay>0</delay>
+                    <applications>
+                        <application>
+                            <name>Tendermint Validator Info</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>SIMPLE_CHANGE</type>
+                            <params/>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>delegations</key>
                     </master_item>
                 </item>
                 <item>
@@ -254,24 +310,33 @@
                 <macro>
                     <macro>{$ALLOWED_DELAY}</macro>
                     <value>25</value>
+                    <description>Block delay allowed before initial alert</description>
                 </macro>
                 <macro>
                     <macro>{$ALLOWED_DELAY_WARN}</macro>
                     <value>120</value>
+                    <description>Block delay allowed before warning alert</description>
                 </macro>
                 <macro>
-                    <macro>{$NETWORK}</macro>
+                    <macro>{$DENOM_FACTOR}</macro>
+                    <value>1</value>
+                    <description>Adjust the reported voting power for networks like Nomic</description>
                 </macro>
                 <macro>
                     <macro>{$RPC_URL}</macro>
-                </macro>
-                <macro>
-                    <macro>{$TOKEN}</macro>
+                    <description>RPC node to connect to; http://myip:26657</description>
                 </macro>
             </macros>
         </template>
     </templates>
     <triggers>
+        <trigger>
+            <expression>{Tendermint Node:delegations.last()}&gt;{Tendermint Node:delegations.prev()} and {Tendermint Node:delegations-change.last()}&gt;0</expression>
+            <name>Delegation increase</name>
+            <opdata>Delegations: {ITEM.VALUE1} (+{ITEM.VALUE3})</opdata>
+            <priority>INFO</priority>
+            <type>MULTIPLE</type>
+        </trigger>
         <trigger>
             <expression>{Tendermint Node:web.test.fail[Check RPC Health].last()}=1</expression>
             <name>RPC Failure</name>
@@ -280,6 +345,32 @@
         </trigger>
     </triggers>
     <graphs>
+        <graph>
+            <name>Delegation change</name>
+            <graph_items>
+                <graph_item>
+                    <sortorder>1</sortorder>
+                    <color>1A7C11</color>
+                    <item>
+                        <host>Tendermint Node</host>
+                        <key>delegations-change</key>
+                    </item>
+                </graph_item>
+            </graph_items>
+        </graph>
+        <graph>
+            <name>Delegations</name>
+            <graph_items>
+                <graph_item>
+                    <sortorder>1</sortorder>
+                    <color>1A7C11</color>
+                    <item>
+                        <host>Tendermint Node</host>
+                        <key>delegations</key>
+                    </item>
+                </graph_item>
+            </graph_items>
+        </graph>
         <graph>
             <name>Latest Block Delay</name>
             <graph_items>

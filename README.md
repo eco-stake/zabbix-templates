@@ -8,7 +8,7 @@ You will likely want to adjust various thresholds and choose which alert types t
 
 ## Tendermint Node
 
-This template provides the base attributes, config and triggers of a Tendermint node, i.e. a non-validator node. Data is sourced from the nodes RPC server.
+This template provides the base attributes, config and triggers of a Tendermint node, including validators. Data is sourced from the nodes RPC server.
 
 [View XML](https://raw.githubusercontent.com/eco-stake/zabbix-templates/master/tendermint-node/tendermint-node.xml)
 
@@ -20,17 +20,23 @@ This template provides the base attributes, config and triggers of a Tendermint 
 - Latest block delay
 - Number of Peers
 - Catching Up
+- Delegations
+- Delegations last change (positive change only)
 
 ### Triggers
 
 - Block Delay
 - Block Delay Warning
 - RPC Failure
+- Delegation increase
+- Delegation decreate
 
 ### Graphs
 
 - Latest block delay
 - Number of peers
+- Delegations
+- Delegations change
 
 ### Configuration
 
@@ -39,34 +45,6 @@ This template provides the base attributes, config and triggers of a Tendermint 
 |{$RPC_URL}| |RPC node to connect to; http://myip:26657|
 |{$ALLOWED_DELAY}|25|Block delay allowed before initial alert|
 |{$ALLOWED_DELAY_WARN}|120|Block delay allowed before warning alert|
-|{$NETWORK}| |Network this node belongs to. Unused atm?|
-|{$TOKEN}| |Token for this network. Unused atm?|
-
-## Tendermint Validator
-
-Inherits from Tendermint Node. Provides additional attributes and triggers for a validator sourced from the node's RPC.
-
-[View XML](https://raw.githubusercontent.com/eco-stake/zabbix-templates/master/tendermint-validator/tendermint-validator.xml)
-
-### Items
-
-- Delegations
-- Delegations last change (positive change only, Zabbix limitation)
-
-### Triggers
-
-- Delegation increase
-- Delegation decreate
-
-### Graphs
-
-- Delegations
-- Delegations change
-
-### Configuration
-
-|Configuration|Default|Description|
-|--|--|--|
 |{$DENOM_FACTOR}|1|Adjust the reported voting power for networks like Nomic|
 
 ## Mintscan Validator

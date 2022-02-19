@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>5.0</version>
-    <date>2022-02-16T21:03:15Z</date>
+    <date>2022-02-19T19:50:13Z</date>
     <groups>
         <group>
             <name>Tendermint Nodes</name>
@@ -13,7 +13,7 @@
             <name>Mintscan Validator</name>
             <templates>
                 <template>
-                    <name>Tendermint Validator</name>
+                    <name>Tendermint Node</name>
                 </template>
             </templates>
             <groups>
@@ -190,9 +190,15 @@ return JSON.stringify({
                 <macro>
                     <macro>{$BLOCK_MISSED_WARN}</macro>
                     <value>10</value>
+                    <description>Number of blocks before sending a HIGH notification. A notification is already sent after 1 block missed.</description>
+                </macro>
+                <macro>
+                    <macro>{$NETWORK}</macro>
+                    <description>Network this node belongs to. Match minstscan naming convention, e.g. crypto-org</description>
                 </macro>
                 <macro>
                     <macro>{$VALIDATOR_ADDRESS}</macro>
+                    <description>Validator's valoper address</description>
                 </macro>
             </macros>
         </template>
